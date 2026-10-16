@@ -64,11 +64,11 @@ export function Lobby({ onOpenGame }: { onOpenGame: (gameId: string) => void }) 
 
   return (
     <div className="mx-auto flex min-h-full w-full max-w-md flex-col gap-4 px-4 pb-8 pt-6">
-      <header className="flex flex-col items-center gap-3">
+      <header className="flex flex-col items-center gap-5">
         <div className="flex items-end gap-1">
           {['KS', 'QH', 'AD'].map((card, index) => (
             <span key={card} style={{ transform: `rotate(${(index - 1) * 12}deg) translateY(${Math.abs(index - 1) * 6}px)` }}>
-              <GameCard card={card} width={54} />
+              <GameCard card={card} width={60} />
             </span>
           ))}
         </div>

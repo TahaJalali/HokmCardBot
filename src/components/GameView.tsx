@@ -187,7 +187,7 @@ export function GameView({
   return (
     <div className="flex h-full flex-col">
       {/* header */}
-      <header className="flex items-center gap-2 border-b border-white/10 bg-black/25 px-3 py-2">
+      <header className="flex items-center gap-2 border-b border-white/10 bg-black/25 px-3 py-2.5">
         <button type="button" className="btn btn-ghost !px-2.5 !py-1.5 text-xs" onClick={onExit}>
           ‹
         </button>
@@ -208,7 +208,7 @@ export function GameView({
               </span>
             ) : null}
           </div>
-          <div className="mt-0.5 text-[11px] text-white/55">
+          <div className="mt-1 text-xs text-white/60">
             دست {toPersianDigits(String(game.trickNo))} از ۱۳ • دست‌ها {toPersianDigits(String(game.teamTricks[0]))} -{' '}
             {toPersianDigits(String(game.teamTricks[1]))} • امتیاز {toPersianDigits(String(game.teamPoints[0]))} -{' '}
             {toPersianDigits(String(game.teamPoints[1]))}
@@ -315,7 +315,7 @@ export function GameView({
       </div>
 
       {/* the hand */}
-      <footer className="border-t border-white/10 bg-black/35 px-2 pt-1 pb-2">
+      <footer className="border-t border-white/10 bg-black/35 px-2 pt-2 pb-2.5">
         {error ? (
           <p className="mx-2 mb-1 rounded-lg border border-rose-400/30 bg-rose-500/10 px-2 py-1 text-center text-[11px] text-rose-200">
             {error}
@@ -343,8 +343,8 @@ export function GameView({
         ) : null}
 
         {game.status === 'playing' ? (
-          <div className="mt-1 flex items-center justify-center gap-3">
-            <span className="text-[11px] text-white/50">
+          <div className="mt-3 flex items-center justify-center gap-4">
+            <span className="text-xs text-white/60">
               {selected ? (
                 <span className="font-bold text-gold-200">{cardName(selected)}</span>
               ) : yourTurn ? (
@@ -355,7 +355,7 @@ export function GameView({
             </span>
             <button
               type="button"
-              className="btn btn-primary !px-6 !py-2 text-sm"
+              className="btn btn-primary !px-7 !py-2.5 text-sm"
               disabled={!selected || !yourTurn || busy}
               onClick={() => selected && void play(selected)}
             >
