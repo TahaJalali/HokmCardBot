@@ -33,30 +33,18 @@ export function ResultOverlay({
 
         <div className="grid grid-cols-2 gap-2 px-5 pb-4 text-sm">
           <div className="rounded-xl bg-black/25 p-3">
-            <div className="text-xs text-white/60">ترک‌ها</div>
+            <div className="text-xs text-white/60">دست‌ها</div>
             <div className="mt-1 font-extrabold text-gold-200">
               {toPersianDigits(String(result.teamTricks[0]))} - {toPersianDigits(String(result.teamTricks[1]))}
             </div>
           </div>
           <div className="rounded-xl bg-black/25 p-3">
-            <div className="text-xs text-white/60">امتیاز کارت‌ها</div>
+            <div className="text-xs text-white/60">امتیاز این بازی</div>
             <div className="mt-1 font-extrabold text-gold-200">
               {toPersianDigits(String(result.teamPoints[0]))} - {toPersianDigits(String(result.teamPoints[1]))}
             </div>
           </div>
         </div>
-
-        {result.hokmBonus ? (
-          <p className="px-5 pb-3 text-xs text-amber-200/90">
-            کارت خوکم (آس سوت) دست تیم مقابل افتاد و دست به آن‌ها رسید.
-          </p>
-        ) : null}
-
-        {result.sweep ? (
-          <p className="px-5 pb-3 text-xs text-amber-200/90">
-            یک تیم هر ۱۳ ترک را گرفت؛ طبق قانون، بازی به تیم دیگر رسید.
-          </p>
-        ) : null}
 
         <div className="flex gap-2 px-5 pb-5">
           <button type="button" className="btn btn-primary flex-1" onClick={onAgain}>
