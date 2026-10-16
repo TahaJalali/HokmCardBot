@@ -32,11 +32,11 @@ export function TrickArea({
   viewerSeat: number;
 }) {
   return (
-    <div className={cn('relative h-[186px] w-full max-w-[320px]', className)}>
+    <div className={cn('relative h-[210px] w-full max-w-[360px]', className)}>
       {[0, 1, 2, 3].map((relative) => (
         <span
           key={relative}
-          className="absolute h-[62px] w-[44px] rounded-[6px] border border-dashed border-white/10 bg-black/10"
+          className="absolute h-[70px] w-[50px] rounded-[7px] border border-dashed border-white/10 bg-black/10"
           style={positionFor(relative)}
         />
       ))}
@@ -49,7 +49,7 @@ export function TrickArea({
             className="animate-deal absolute"
             style={{ ...positionFor(relative), zIndex: index + 1 }}
           >
-            <GameCard card={entry.card} width={46} />
+            <GameCard card={entry.card} width={54} />
           </div>
         );
       })}

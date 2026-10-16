@@ -20,7 +20,7 @@ export function TrumpPicker({
           با دیدن پنج برگ نخست، خال حکم را انتخاب کنید. هر برگ حکم از برگ‌های خال‌های دیگر بالاتر است.
         </p>
 
-        <div className="mt-3 flex justify-center gap-1">{hand.map((card) => <GameCard key={card} card={card} width={46} />)}</div>
+        <div className="mt-4 flex justify-center gap-1.5">{hand.map((card) => <GameCard key={card} card={card} width={50} />)}</div>
 
         <div className="mt-4 grid grid-cols-2 gap-3">
           {SUITS.map((suit) => (

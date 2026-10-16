@@ -32,7 +32,7 @@ export type PlayingCardProps = {
   className?: string;
   faceDown?: boolean;
   /** Card width in pixels. Height follows the classic 5:7 ratio. */
-  width?: number;
+  width?: number | string;
   /** Dim the card (not your turn / illegal move). */
   disabled?: boolean;
   /** Raise the card (selected). */
@@ -260,7 +260,10 @@ export function PlayingCard({
       )}
       onClick={onClick}
       role={onClick ? 'button' : undefined}
-      style={{ fontSize: width / 14, width }}
+      style={{
+        fontSize: typeof width === 'number' ? width / 14 : 'clamp(4.1px, 1.14vw, 5.3px)',
+        width,
+      }}
     >
       {faceDown ? (
         <div

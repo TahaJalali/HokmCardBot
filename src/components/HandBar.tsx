@@ -1,9 +1,9 @@
+import { useEffect, useState } from 'react';
+
 import { GameCard } from './GameCard';
 import { cn } from '@/helpers/classname-helper';
 import type { Card } from '@/lib/hokm';
 
-const CARD_WIDTH = 52;
-const SPACING = 20;
 const ANGLE = 2.6;
 
 /** The player's own hand, fanned out at the bottom of the screen. */
@@ -20,12 +20,26 @@ export function HandBar({
   selected: string | null;
   disabled: boolean;
 }) {
+  const [viewportWidth, setViewportWidth] = useState(() => (typeof window === 'undefined' ? 390 : window.innerWidth));
+
+  useEffect(() => {
+    const updateWidth = () => setViewportWidth(window.innerWidth);
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
+  }, []);
+
   if (!cards.length) return null;
 
+  // Keep a larger, readable card size while adapting the overlap to the
+  // available width (especially on narrow phones and when holding many cards).
+  const cardWidth = Math.min(76, Math.max(58, viewportWidth * 0.17));
+  const spacing = cards.length > 1
+    ? Math.min(25, Math.max(12, (viewportWidth - 24 - cardWidth) / (cards.length - 1)))
+    : 0;
   const middle = (cards.length - 1) / 2;
 
   return (
-    <div className="relative h-[124px] w-full select-none">
+    <div className="relative h-[142px] w-full select-none">
       {cards.map((card, index) => {
         const offset = middle - index;
         const angle = offset * ANGLE;
@@ -39,7 +53,7 @@ export function HandBar({
             aria-pressed={selected === card}
             className="absolute bottom-0 left-1/2 transition-transform duration-200"
             style={{
-              transform: `translateX(calc(-50% + ${offset * SPACING}px)) rotate(${angle}deg)`,
+              transform: `translateX(calc(-50% + ${offset * spacing}px)) rotate(${angle}deg)`,
               transformOrigin: '50% 130%',
               // The right-most card lies on top, so the corner index of every
               // card stays visible.
@@ -47,7 +61,7 @@ export function HandBar({
             }}
             onClick={() => onSelect(card)}
           >
-            <GameCard card={card} width={CARD_WIDTH} disabled={disabled || !isLegal} selected={selected === card} />
+            <GameCard card={card} width="clamp(58px, 17vw, 76px)" disabled={disabled || !isLegal} selected={selected === card} />
           </button>
         );
       })}

@@ -9,7 +9,7 @@ export function SeatAvatar({ name, type }: { name: string; type: Seat['type'] })
   return (
     <div
       className={cn(
-        'flex size-9 items-center justify-center rounded-full border text-base shadow-inner',
+        'flex size-11 items-center justify-center rounded-full border text-lg shadow-inner',
         type === 'bot' && 'border-sky-300/30 bg-sky-500/20',
         type === 'human' && 'border-amber-300/40 bg-amber-400/20',
         type === 'empty' && 'border-white/15 bg-white/5 text-white/40',
@@ -54,17 +54,17 @@ export function SeatPanel({
         ) : null}
       </div>
 
-      <div className="max-w-[92px] truncate text-center text-[11px] font-medium text-white/85">
+      <div className="max-w-[104px] truncate text-center text-xs font-medium text-white/85">
         {name || 'بازیکن'}
       </div>
 
-      {sub ? <div className="text-[10px] text-amber-200/80">{sub}</div> : null}
+      {sub ? <div className="text-[11px] text-amber-200/80">{sub}</div> : null}
 
-      <div className="flex h-7 items-end gap-0.5">
+      <div className="flex h-8 items-end gap-0.5">
         {Array.from({ length: Math.min(cards, 5) }).map((_, index) => (
           <span
             key={index}
-            className="h-6 w-3.5 rounded-[3px] border border-black/30 shadow-sm"
+            className="h-7 w-4 rounded-[3px] border border-black/30 shadow-sm"
             style={{
               backgroundColor: '#9d2c35',
               backgroundImage:
