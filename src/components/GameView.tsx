@@ -241,7 +241,6 @@ export function GameView({
         <div className="absolute inset-x-0 top-1 flex justify-center">
           <SeatPanel
             active={game.turn === partnerSeat && game.status === 'playing'}
-            cards={game.handCounts[partnerSeat]}
             name={game.seats[partnerSeat]?.name ?? ''}
             seat={partnerSeat}
             sub={game.declarer === partnerSeat ? 'حاکم' : 'هم‌تیمی'}
@@ -252,7 +251,6 @@ export function GameView({
         <div className="absolute left-1 top-1/2 -translate-y-1/2">
           <SeatPanel
             active={game.turn === leftSeat && game.status === 'playing'}
-            cards={game.handCounts[leftSeat]}
             name={game.seats[leftSeat]?.name ?? ''}
             seat={leftSeat}
             type={game.seats[leftSeat]?.type ?? 'empty'}
@@ -262,14 +260,13 @@ export function GameView({
         <div className="absolute right-1 top-1/2 -translate-y-1/2">
           <SeatPanel
             active={game.turn === rightSeat && game.status === 'playing'}
-            cards={game.handCounts[rightSeat]}
             name={game.seats[rightSeat]?.name ?? ''}
             seat={rightSeat}
             type={game.seats[rightSeat]?.type ?? 'empty'}
           />
         </div>
 
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+        <div className="absolute inset-0 flex -translate-y-8 flex-col items-center justify-center gap-2">
           <TrickArea trick={game.trick} viewerSeat={viewerSeat} />
           {lastTrick ? (
             <span className="rounded-full bg-black/40 px-2.5 py-1 text-[11px] text-white/70">

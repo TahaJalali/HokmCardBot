@@ -30,7 +30,6 @@ function hash(value: string): number {
 
 export function SeatPanel({
   active = false,
-  cards = 0,
   className,
   name,
   seat,
@@ -38,7 +37,6 @@ export function SeatPanel({
   type,
 }: {
   active?: boolean;
-  cards?: number;
   className?: string;
   name: string;
   seat: number;
@@ -60,20 +58,6 @@ export function SeatPanel({
 
       {sub ? <div className="text-[11px] text-amber-200/80">{sub}</div> : null}
 
-      <div className="flex h-8 items-end gap-0.5">
-        {Array.from({ length: Math.min(cards, 5) }).map((_, index) => (
-          <span
-            key={index}
-            className="h-7 w-4 rounded-[3px] border border-black/30 shadow-sm"
-            style={{
-              backgroundColor: '#9d2c35',
-              backgroundImage:
-                'repeating-linear-gradient(45deg, rgba(255,255,255,0.18) 0, rgba(255,255,255,0.18) 1px, transparent 1px, transparent 4px)',
-            }}
-          />
-        ))}
-        {cards > 5 ? <span className="ms-1 text-[10px] text-white/60">+{cards - 5}</span> : null}
-      </div>
     </div>
   );
 }
