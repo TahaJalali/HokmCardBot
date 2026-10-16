@@ -16,6 +16,15 @@ There is no server to run locally and no `node_modules` to import from at runtim
 the only things available inside a module are the platform SDK and other modules
 in this project.
 
+**This project is the Persian card game «خوکم» (Hokm).** The Mini App lives in
+the project root (Vite + React + TypeScript + Tailwind, built into `dist/`), the
+game itself is in `tgcloud/`. The rules the code implements are written down in
+[docs/hokm-rules.md](docs/hokm-rules.md) — the rules are split in two halves
+that must stay identical: `tgcloud/lib/hokm-rules.js` (the source of truth) and
+`src/lib/hokm.ts` (the mirror the Mini App uses). `scripts/check-mirror.ts`
+proves that they agree, `scripts/simulate.mjs` plays thousands of complete bot
+games and checks every rule.
+
 ## Layout
 
 Everything the platform runs lives in the **`tgcloud/`** folder. The rest of the
