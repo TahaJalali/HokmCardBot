@@ -5,11 +5,10 @@
  * tested locally (`node scripts/simulate.mjs`).
  */
 import {
-  HOKM_CARD_RULE,
-  LAST_TRICK_BONUS,
   SEAT_COUNT,
-  cardPoints,
   deal,
+  buildDeck,
+  shuffle,
   teamOf,
   trickWinner,
 } from './hokm-rules.js';
@@ -19,7 +18,8 @@ export { SEAT_COUNT };
 
 /** Deal the cards and wait for the declarer to pick the trump suit. */
 export function startGame(game) {
-  game.hands = deal();
+  game.declarer = shuffle(buildDeck()).findIndex((card) => card[0] === 'A') % 4;
+  game.hands = deal(game.declarer);
   game.trick = [];
   game.tricks = [];
   game.teamTricks = [0, 0];
@@ -30,9 +30,13 @@ export function startGame(game) {
   game.turn = game.declarer;
   game.lead = game.declarer;
   game.status = 'trump';
+  if (game.seats[game.declarer]?.type === 'bot') {
+    chooseTrump(game, game.hands[game.declarer][0][1]);
+    runBots(game);
+  }
 }
 
-/** The declarer names the trump suit ("خوکم"). */
+/** The declarer names the trump suit ("حکم"). */
 export function chooseTrump(game, trump) {
   game.trump = trump;
   game.status = 'playing';
@@ -44,18 +48,6 @@ export function chooseTrump(game, trump) {
 /** A random trump for a bot declarer. */
 export function randomTrump() {
   return ['S', 'H', 'D', 'C'][Math.floor(Math.random() * 4)];
-}
-
-function reasonText({ winner, sweep, hokmBonus, teamTricks }) {
-  if (sweep) {
-    return `تیم ${winner === 0 ? 'شما' : 'مقابل'} همه‌ی ۱۳ ترک را گرفت؛ طبق قانون خوکم، بازی به تیم دیگر رسید.`;
-  }
-  if (hokmBonus) {
-    return `تیم ${winner === 0 ? 'شما' : 'مقابل'} برنده‌ی دست بود، اما کارت خوکم (آس خوکم) را تیم مقابل گرفته بود؛ پس دست به آن‌ها رسید.`;
-  }
-  const mine = teamTricks[winner];
-  const theirs = teamTricks[1 - winner];
-  return `تیم ${winner === 0 ? 'شما' : 'مقابل'} با ${mine} ترک در برابر ${theirs} ترک برنده شد.`;
 }
 
 /** Play one card. Assumes the card is legal. */
@@ -73,23 +65,17 @@ export function applyMove(game, seat, card) {
   }
 
   const winner = trickWinner(game.trick, game.trump);
-  let points = game.trick.reduce((sum, entry) => sum + cardPoints(entry.card), 0);
-  const trickNo = game.tricks.length + 1;
-  if (trickNo === 13) points += LAST_TRICK_BONUS;
+  const points = 1;
 
   const team = teamOf(winner);
   game.teamTricks[team] += 1;
-  game.teamPoints[team] += points;
 
-  // The Hokm card (ace of trumps) goes to the team that won its trick.
-  const hokmCard = `A${game.trump}`;
-  if (game.trick.some((entry) => entry.card === hokmCard)) game.hokmTeam = team;
 
   game.tricks.push({ cards: [...game.trick], winner, points });
   game.trick = [];
   game.lead = winner;
 
-  if (game.tricks.length === 13) {
+  if (game.teamTricks[team] === 7) {
     finishGame(game);
   } else {
     game.turn = winner;
@@ -101,7 +87,7 @@ export function runBots(game) {
   const played = [];
   let guard = 0;
 
-  while (game.status === 'playing' && game.seats[game.turn]?.type === 'bot' && guard < 16) {
+  while (game.status === 'playing' && game.seats[game.turn]?.type === 'bot' && guard < 52) {
     guard += 1;
     const seat = game.turn;
     const card = chooseBotCard({
@@ -120,40 +106,21 @@ export function runBots(game) {
 }
 
 export function finishGame(game) {
-  const [first, second] = game.teamTricks;
-  let winner = null;
-  let sweep = false;
-
-  if (first === 13) {
-    winner = 1;
-    sweep = true;
-  } else if (second === 13) {
-    winner = 0;
-    sweep = true;
-  } else if (first > second) {
-    winner = 0;
-  } else if (second > first) {
-    winner = 1;
-  } else {
-    // With 13 tricks a 6 — 6 split cannot happen; the points are the safety
-    // net for it.
-    winner = game.teamPoints[0] > game.teamPoints[1] ? 0 : 1;
-  }
-
-  let hokmBonus = false;
-  if (!sweep && HOKM_CARD_RULE && game.hokmTeam !== null && game.hokmTeam !== winner) {
-    hokmBonus = true;
-    winner = 1 - winner;
-  }
-
+  const winner = game.teamTricks[0] >= 7 ? 0 : 1;
+  const kot = game.teamTricks[1 - winner] === 0;
+  const score = kot ? (teamOf(game.declarer) === winner ? 2 : 3) : 1;
+  game.teamPoints = [0, 0];
+  game.teamPoints[winner] = score;
   game.winner = winner;
   game.status = 'finished';
   game.result = {
     winner,
-    sweep,
-    hokmBonus,
+    sweep: false,
+    hokmBonus: false,
     teamTricks: [...game.teamTricks],
     teamPoints: [...game.teamPoints],
-    reason: reasonText({ winner, sweep, hokmBonus, teamTricks: game.teamTricks }),
+    reason: kot
+      ? `برد هفت بر صفر؛ ${score === 3 ? 'حاکم‌کتی و سه امتیاز' : 'کت و دو امتیاز'} برای تیم برنده.`
+      : 'تیم برنده با گرفتن هفت دست، یک امتیاز گرفت.',
   };
 }

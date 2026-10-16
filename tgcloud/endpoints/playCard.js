@@ -59,7 +59,7 @@ export default async function (input, ctx) {
     const result = game.result;
     await notify(
       game,
-      `بازی خوکم تمام شد.\n${result?.reason ?? ''}\nترک‌ها: ${game.teamTricks[0]} - ${game.teamTricks[1]}\nامتیاز: ${game.teamPoints[0]} - ${game.teamPoints[1]}`,
+      `بازی حکم تمام شد.\n${result?.reason ?? ''}\nدست‌ها: ${game.teamTricks[0]} - ${game.teamTricks[1]}\nامتیاز: ${game.teamPoints[0]} - ${game.teamPoints[1]}`,
     );
   } else if (game.seats[game.turn]?.type === 'human') {
     // A human plays next — let them know in the chat.
@@ -67,7 +67,7 @@ export default async function (input, ctx) {
     if (next.chatId) {
       await notifyOne(
         next.chatId,
-        `نوبت شماست! ترک ${game.tricks.length + 1} از ۱۳ — میز ${game.id}`,
+        `نوبت شماست! دست ${game.tricks.length + 1} از ۱۳ — میز ${game.id}`,
       );
     }
   }

@@ -10,11 +10,11 @@ function positionFor(relative: number): CSSProperties {
     case 0:
       return { bottom: 0, left: '50%', transform: 'translateX(-50%)' };
     case 1:
-      return { left: 0, top: '50%', transform: 'translateY(-50%)' };
+      return { right: 0, top: '50%', transform: 'translateY(-50%)' };
     case 2:
       return { top: 0, left: '50%', transform: 'translateX(-50%)' };
     default:
-      return { right: 0, top: '50%', transform: 'translateY(-50%)' };
+      return { left: 0, top: '50%', transform: 'translateY(-50%)' };
   }
 }
 
@@ -26,12 +26,10 @@ export function TrickArea({
   className,
   trick,
   viewerSeat,
-  hokmCard,
 }: {
   className?: string;
   trick: TrickEntry[];
   viewerSeat: number;
-  hokmCard?: string | null;
 }) {
   return (
     <div className={cn('relative h-[186px] w-full max-w-[320px]', className)}>
@@ -51,7 +49,7 @@ export function TrickArea({
             className="animate-deal absolute"
             style={{ ...positionFor(relative), zIndex: index + 1 }}
           >
-            <GameCard card={entry.card} width={46} highlighted={hokmCard === entry.card} />
+            <GameCard card={entry.card} width={46} />
           </div>
         );
       })}

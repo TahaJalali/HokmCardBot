@@ -3,8 +3,8 @@ import { beatsCard, legalCards, RANK_VALUE, rankOf, suitOf, teamOf, trickWinner 
 /**
  * The bot opponents.
  *
- * The AI follows the same rules as the humans: it must follow suit, it must
- * play a trump when it cannot follow, and it has to beat a trump when it can.
+ * The AI follows the same rules as the humans: it must follow suit, it may
+ * play any card when it cannot follow.
  * On top of that it plays a reasonable card — it wins tricks it can win, keeps
  * its high cards for later, does not beat its own partner and leads its
  * longest suit.
