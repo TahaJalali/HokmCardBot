@@ -32,7 +32,7 @@ export function TrickArea({
   viewerSeat: number;
 }) {
   return (
-    <div className={cn('relative h-[210px] w-full max-w-[360px]', className)}>
+    <div className={cn('relative h-[180px] w-[208px] max-w-[calc(100vw-2rem)]', className)}>
       {[0, 1, 2, 3].map((relative) => (
         <span
           key={relative}
