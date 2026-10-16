@@ -1,8 +1,8 @@
-# خوکم — Hokm Card Bot
+# حکم — Hokm Card Bot
 
-A Persian **Hokm** (خوکم) game as a **Telegram Mini App**, running on the
-tgcloud serverless platform. Four players, two teams, 13 tricks, a trump suit
-(«خوکم») and the ace of trumps as the Hokm card.
+A Persian **Hokm** (حکم) game as a **Telegram Mini App**, running on the
+tgcloud serverless platform. Four players, two teams and a trump suit chosen by the حاکم.
+Each table currently plays one independent game, ending at seven tricks.
 
 * **Mini App front-end** — Vite + React + TypeScript + Tailwind (v4), in the
   project root, built into `dist/`.
@@ -154,8 +154,9 @@ may be played.
 
 See [docs/hokm-rules.md](docs/hokm-rules.md) — in short:
 
-* the declarer chooses the trump (خوکم); the ace of the trump is the Hokm card
-* follow the suit, otherwise play a trump, and beat a trump whenever you can
-* the winner of a trick leads the next one
-* seven tricks win the round; taking all thirteen loses it
-* if the winners did not capture the Hokm card, the round goes to the other team
+* the first ace selects the حاکم, who chooses trump from the first five cards
+* follow the led suit when possible; otherwise any card is allowed
+* the winner of a trick leads the next one, counterclockwise
+* stop as soon as one team wins seven tricks
+* ordinary wins score one; a 7–0 کت scores two, or three against the حاکم
+* full matches to seven points, optional بام and redeal requests are not yet supported

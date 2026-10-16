@@ -26,9 +26,9 @@ export interface GameResult {
   winner: number;
   /** Persian sentence explaining the outcome. */
   reason: string;
-  /** The winners took all 13 tricks — they lose the round. */
+  /** Legacy field retained for stored games; false for standard Hokm. */
   sweep: boolean;
-  /** The winners did not capture the Hokm (trump ace) card. */
+  /** Legacy field retained for stored games; false for standard Hokm. */
   hokmBonus: boolean;
   teamTricks: [number, number];
   teamPoints: [number, number];
@@ -54,7 +54,7 @@ export interface PublicGame {
   teamTricks: [number, number];
   teamPoints: [number, number];
   seats: Seat[];
-  /** Team that captured the Hokm card (trump ace), if it was played. */
+  /** Legacy field retained for storage compatibility; unused in standard Hokm. */
   hokmTeam: number | null;
   winner: number | null;
   result: GameResult | null;

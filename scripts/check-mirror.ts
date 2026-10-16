@@ -15,7 +15,7 @@ import {
   type Card,
   type Suit,
   type TrickEntry,
-} from '../src/lib/hokm';
+} from '../src/lib/hokm.ts';
 import {
   legalCards as serverLegal,
   trickWinner as serverWinner,

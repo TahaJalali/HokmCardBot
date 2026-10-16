@@ -69,7 +69,7 @@ export function GameView({
 
   // Poll while the opponent has to move, so the table stays up to date.
   useEffect(() => {
-    if (!game || game.status !== 'playing' || yourTurn) return;
+    if (!game || game.status === 'finished' || yourTurn) return;
     const timer = window.setInterval(() => void load(true), 3000);
     return () => window.clearInterval(timer);
   }, [game, yourTurn, load]);
@@ -95,7 +95,7 @@ export function GameView({
       return;
     }
     if (!legal.has(card)) {
-      const reason = illegalReason(card, game.trick, game.trump);
+      const reason = illegalReason(card, game.trick, game.trump, game.hand);
       setNotice(reason ? `${reason} — ${cardName(card)}` : 'این کارت در این وضعیت قابل بازی نیست');
       haptic('error');
       return;
@@ -135,7 +135,7 @@ export function GameView({
       haptic('success');
     } catch (cause) {
       if (!mounted.current) return;
-      setError(cause instanceof Error ? cause.message : 'انتخاب خوکم ممکن نشد');
+      setError(cause instanceof Error ? cause.message : 'انتخاب حکم ممکن نشد');
     } finally {
       if (mounted.current) setBusy(false);
     }
@@ -178,9 +178,9 @@ export function GameView({
 
   const seatAt = (relative: number) => (viewerSeat + relative + 4) % 4;
   const partnerSeat = seatAt(2);
-  const leftSeat = seatAt(1);
-  const rightSeat = seatAt(3);
-  const hokmCard = game.trump ? `A${game.trump}` : null;
+  const leftSeat = seatAt(3);
+  const rightSeat = seatAt(1);
+
   const lastTrick = game.tricks.length ? game.tricks[game.tricks.length - 1] : null;
   const shareLink = data?.shareLink ?? '';
 
@@ -204,12 +204,12 @@ export function GameView({
             </button>
             {game.trump ? (
               <span className="rounded-full bg-black/30 px-2 py-0.5 text-[11px] text-white/80">
-                خوکم: {SUIT_SYMBOL[game.trump]} {SUIT_NAME[game.trump]}
+                حکم: {SUIT_SYMBOL[game.trump]} {SUIT_NAME[game.trump]}
               </span>
             ) : null}
           </div>
           <div className="mt-0.5 text-[11px] text-white/55">
-            ترک {toPersianDigits(String(game.trickNo))} از ۱۳ • ترک‌ها {toPersianDigits(String(game.teamTricks[0]))} -{' '}
+            دست {toPersianDigits(String(game.trickNo))} از ۱۳ • دست‌ها {toPersianDigits(String(game.teamTricks[0]))} -{' '}
             {toPersianDigits(String(game.teamTricks[1]))} • امتیاز {toPersianDigits(String(game.teamPoints[0]))} -{' '}
             {toPersianDigits(String(game.teamPoints[1]))}
           </div>
@@ -244,7 +244,7 @@ export function GameView({
             cards={game.handCounts[partnerSeat]}
             name={game.seats[partnerSeat]?.name ?? ''}
             seat={partnerSeat}
-            sub={game.declarer === partnerSeat ? 'اعلان‌کننده' : 'هم‌تیمی'}
+            sub={game.declarer === partnerSeat ? 'حاکم' : 'هم‌تیمی'}
             type={game.seats[partnerSeat]?.type ?? 'empty'}
           />
         </div>
@@ -270,10 +270,10 @@ export function GameView({
         </div>
 
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-          <TrickArea hokmCard={hokmCard} trick={game.trick} viewerSeat={viewerSeat} />
+          <TrickArea trick={game.trick} viewerSeat={viewerSeat} />
           {lastTrick ? (
             <span className="rounded-full bg-black/40 px-2.5 py-1 text-[11px] text-white/70">
-              ترک {toPersianDigits(String(game.tricks.length))}: {game.seats[lastTrick.winner]?.name ?? ''}
+              دست {toPersianDigits(String(game.tricks.length))}: {game.seats[lastTrick.winner]?.name ?? ''}
             </span>
           ) : null}
         </div>
@@ -292,8 +292,8 @@ export function GameView({
                   className="btn btn-primary"
                   onClick={() =>
                     shareUrl(
-                      shareLink || `https://t.me/share/url?url=&text=${encodeURIComponent(`میز خوکم: ${game.id}`)}`,
-                      `میز خوکم: ${game.id}`,
+                      shareLink || `https://t.me/share/url?url=&text=${encodeURIComponent(`میز حکم: ${game.id}`)}`,
+                      `میز حکم: ${game.id}`,
                     )
                   }
                 >
@@ -366,14 +366,14 @@ export function GameView({
       </footer>
 
       {game.status === 'trump' && you.seat === game.declarer ? (
-        <TrumpPicker onPick={(suit) => void pickTrump(suit)} />
+        <TrumpPicker hand={game.hand} onPick={(suit) => void pickTrump(suit)} />
       ) : null}
 
       {game.status === 'trump' && you.seat !== game.declarer ? (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-6 backdrop-blur-sm">
           <div className="panel p-6 text-center text-sm text-white/85">
             <div className="mb-2 text-3xl">⏳</div>
-            بازیکن اعلان‌کننده در حال انتخاب خوکم است…
+            حاکم در حال انتخاب حکم است…
           </div>
         </div>
       ) : null}

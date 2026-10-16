@@ -1,5 +1,5 @@
 /**
- * Hokm (خوکم) rules — client mirror of `tgcloud/lib/hokm-rules.js`.
+ * Hokm (حکم) rules — client mirror of `tgcloud/lib/hokm-rules.js`.
  *
  * The server is the source of truth; this file only mirrors the pure
  * functions the Mini App needs (labels, legality checks, trick resolution) so
@@ -40,7 +40,7 @@ export const SUIT_SYMBOL: Record<Suit, string> = {
 };
 
 export const SUIT_NAME: Record<Suit, string> = {
-  S: 'گشنیز',
+  S: 'پیک',
   H: 'دل',
   D: 'خشت',
   C: 'خاج',
@@ -49,8 +49,8 @@ export const SUIT_NAME: Record<Suit, string> = {
 export const RANK_NAME: Record<string, string> = {
   A: 'آس',
   T: 'ده',
-  J: 'ب',
-  Q: 'خ',
+  J: 'سرباز',
+  Q: 'بی‌بی',
   K: 'شاه',
 };
 
@@ -87,21 +87,10 @@ export function teamOf(seat: number): number {
   return seat % 2;
 }
 
-/** Card points: A = 10, 10 = 10, K = 4, Q = 3, J = 2, everything else 0. */
-export function cardPoints(card: Card): number {
-  switch (rankOf(card)) {
-    case 'A':
-    case 'T':
-      return 10;
-    case 'K':
-      return 4;
-    case 'Q':
-      return 3;
-    case 'J':
-      return 2;
-    default:
-      return 0;
-  }
+/** Cards have no separate scoring value. */
+export function cardPoints(_card: Card): number {
+  return 0; // Cards have ranks, not scoring values in Hokm.
+
 }
 
 export interface TrickEntry {
@@ -128,14 +117,7 @@ export function trickWinner(entries: TrickEntry[], trump: Suit | null): number |
   return best.seat;
 }
 
-/**
- * The cards a seat may legally play.
- *
- * - Must follow the suit that was led.
- * - If it cannot, it must play a trump.
- * - If a trump is in the trick and the seat holds a higher trump, it must
- *   beat it (the classic "باید خوکم بزند" rule).
- */
+/** Follow the led suit when possible; otherwise any card is legal. */
 export function legalCards(hand: Card[], trick: TrickEntry[], trump: Suit | null): Card[] {
   if (!trick.length || !trump) return [...hand];
 
@@ -143,27 +125,12 @@ export function legalCards(hand: Card[], trick: TrickEntry[], trump: Suit | null
   const following = hand.filter((card) => suitOf(card) === led);
   if (following.length) return following;
 
-  const trumps = hand.filter((card) => suitOf(card) === trump);
-  if (!trumps.length) return [...hand];
-
-  const playedTrumps = trick.filter((entry) => suitOf(entry.card) === trump);
-  if (playedTrumps.length) {
-    const highest = Math.max(...playedTrumps.map((entry) => RANK_VALUE[rankOf(entry.card)]));
-    const beaters = trumps.filter((card) => RANK_VALUE[rankOf(card)] > highest);
-    if (beaters.length) return beaters;
-  }
-
-  return trumps;
+  return [...hand];
 }
 
-/** A human readable reason why a card cannot be played right now. */
-export function illegalReason(card: Card, trick: TrickEntry[], trump: Suit | null): string | null {
-  if (!trick.length || !trump) return null;
-  if (legalCards([card], trick, trump).length) return null;
-
-  const led = suitOf(trick[0].card);
-  if (suitOf(card) === led) return null;
-  return 'باید سوت (خوکم) بزنید';
+/** Explain an illegal choice using the player's full hand. */
+export function illegalReason(card: Card, trick: TrickEntry[], trump: Suit | null, hand: Card[]): string | null {
+  return legalCards(hand, trick, trump).includes(card) ? null : 'باید از خال زمینه بازی کنید';
 }
 
 export function buildDeck(): Card[] {
@@ -183,19 +150,17 @@ export function shuffle<T>(items: T[]): T[] {
   return out;
 }
 
-/** Deal the whole deck — 13 cards per seat, seat 0 first. */
-export function deal(): Card[][] {
+/** Reserve the 5–4–4 deal, starting with the ruler. */
+export function deal(declarer = 0): Card[][] {
   const deck = shuffle(buildDeck());
   const hands: Card[][] = [[], [], [], []];
   let card = 0;
-  for (let round = 0; round < 13; round += 1) {
-    for (let seat = 0; seat < 4; seat += 1) {
-      hands[seat].push(deck[card]);
-      card += 1;
+  for (const count of [5, 4, 4]) {
+    for (let offset = 0; offset < 4; offset += 1) {
+      const seat = (declarer + offset) % 4;
+      hands[seat].push(...deck.slice(card, card + count));
+      card += count;
     }
-  }
-  for (const hand of hands) {
-    hand.sort((a, b) => RANK_VALUE[rankOf(b)] - RANK_VALUE[rankOf(a)] || a.localeCompare(b));
   }
   return hands;
 }

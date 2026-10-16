@@ -74,8 +74,8 @@ export function Lobby({ onOpenGame }: { onOpenGame: (gameId: string) => void }) 
         </div>
 
         <div className="text-center">
-          <h1 className="text-3xl font-black tracking-tight text-gold-200">خوکم</h1>
-          <p className="mt-1 text-[13px] text-white/65">بازی ایرانی چهار نفره — سوت بزن، ترک ببر</p>
+          <h1 className="text-3xl font-black tracking-tight text-gold-200">حکم</h1>
+          <p className="mt-1 text-[13px] text-white/65">بازی ایرانی چهار نفره — خال را دنبال کن، دست بگیر</p>
         </div>
       </header>
 
@@ -103,7 +103,7 @@ export function Lobby({ onOpenGame }: { onOpenGame: (gameId: string) => void }) 
             <button
               type="button"
               className="btn btn-primary flex-1 !py-2.5 text-sm"
-              onClick={() => shareUrl(room.link, 'بیا خوکم بازی کنیم! 🎴')}
+              onClick={() => shareUrl(room.link, 'بیا حکم بازی کنیم! 🎴')}
               disabled={!room.link}
             >
               📤 دعوت از دوستان
@@ -160,7 +160,7 @@ export function Lobby({ onOpenGame }: { onOpenGame: (gameId: string) => void }) 
                   {game.status === 'waiting'
                     ? 'در انتظار بازیکن'
                     : game.status === 'trump'
-                      ? 'انتخاب خوکم'
+                      ? 'انتخاب حکم'
                       : game.status === 'finished'
                         ? 'پایان‌یافته'
                         : 'در حال بازی'}
@@ -172,7 +172,7 @@ export function Lobby({ onOpenGame }: { onOpenGame: (gameId: string) => void }) 
       ) : null}
 
       <footer className="mt-auto pt-2 text-center text-[11px] leading-5 text-white/40">
-        ۴ بازیکن • ۱۳ ترک • خوکم = آس سوت
+        ۴ بازیکن • ۲ تیم • برد با ۷ دست
         {botUsername ? (
           <>
             {' • '}
@@ -180,7 +180,7 @@ export function Lobby({ onOpenGame }: { onOpenGame: (gameId: string) => void }) 
           </>
         ) : null}
         <br />
-        {toPersianDigits('13')} ترک، برنده‌ی هر ترک، شروع‌کننده‌ی ترک بعدی
+        تا {toPersianDigits('13')} دست، برنده‌ی هر دست، شروع‌کننده‌ی دست بعدی
       </footer>
     </div>
   );

@@ -37,13 +37,13 @@ export default async function (input, ctx) {
 
   startGame(game);
 
-  if (game.seats[game.declarer]?.type === 'bot') {
+  if (game.status === 'trump' && game.seats[game.declarer]?.type === 'bot') {
     chooseTrump(game, randomTrump());
   }
 
   const moves = runBots(game);
   await saveGame(game);
-  await notify(game, 'بازی خوکم با ربات‌ها شروع شد! 🎴');
+  await notify(game, 'بازی حکم با ربات‌ها شروع شد! 🎴');
 
   return {
     game: publicState(game, seat),

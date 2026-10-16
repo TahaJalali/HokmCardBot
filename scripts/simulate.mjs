@@ -1,121 +1,53 @@
-/**
- * Play thousands of complete games with four bots and check the rules.
- *
- *   node scripts/simulate.mjs [games]
- *
- * The simulation uses the very same modules the bot runs
- * (`tgcloud/lib/hokm-rules.js`, `hokm-ai.js` and `hokm-play.js`), so it
- * catches rule bugs before a single card is dealt on the platform.
- */
-import { applyMove, chooseTrump, finishGame, randomTrump, startGame } from '../tgcloud/lib/hokm-play.js';
-import { legalCards, buildDeck, cardPoints, RANK_VALUE, rankOf, suitOf } from '../tgcloud/lib/hokm-rules.js';
+import assert from 'node:assert/strict';
+import { applyMove, chooseTrump, finishGame, startGame } from '../tgcloud/lib/hokm-play.js';
+import { buildDeck, legalCards, teamOf, trickWinner, SUIT_NAME, RANK_NAME } from '../tgcloud/lib/hokm-rules.js';
+import { chooseBotCard } from '../tgcloud/lib/hokm-ai.js';
 
-const GAMES = Number(process.argv[2] ?? 2000);
-
-function newGame() {
-  return {
-    id: 'SIM',
-    mode: 'solo',
-    status: 'trump',
-    trump: null,
-    declarer: 0,
-    turn: 0,
-    lead: 0,
-    seats: [
-      { type: 'bot', name: 'A' },
-      { type: 'bot', name: 'B' },
-      { type: 'bot', name: 'C' },
-      { type: 'bot', name: 'D' },
-    ],
-    hands: [[], [], [], []],
-    trick: [],
-    tricks: [],
-    teamTricks: [0, 0],
-    teamPoints: [0, 0],
-    hokmTeam: null,
-    winner: null,
-    result: null,
-    version: 0,
-  };
+assert.equal(SUIT_NAME.S, 'پیک');
+assert.equal(RANK_NAME.J, 'سرباز');
+assert.equal(RANK_NAME.Q, 'بی‌بی');
+assert.deepEqual(legalCards(['2H', 'AS'], [{ seat: 0, card: 'AH' }], 'S'), ['2H']);
+assert.deepEqual(legalCards(['2S', 'AS', '3D'], [{ seat: 0, card: 'AH' }, { seat: 1, card: 'KS' }], 'S'), ['2S', 'AS', '3D']);
+assert.deepEqual(legalCards(['2S', 'AS'], [{ seat: 0, card: 'KS' }], 'S'), ['2S', 'AS']);
+assert.equal(trickWinner([{ seat: 0, card: 'AH' }, { seat: 1, card: '2S' }], 'S'), 1);
+for (const [declarer, tricks, score] of [[0, [7, 0], 2], [1, [7, 0], 3], [0, [0, 7], 3], [1, [0, 7], 2], [0, [7, 6], 1]]) {
+  const game = { declarer, teamTricks: tricks, hokmTeam: tricks[0] === 7 ? 1 : 0 };
+  finishGame(game);
+  assert.equal(game.winner, tricks[0] === 7 ? 0 : 1);
+  assert.equal(game.teamPoints[game.winner], score);
 }
-
-const stats = {
-  team0: 0,
-  team1: 0,
-  sweeps: 0,
-  hokmBonus: 0,
-  sixSix: 0,
-  totalPoints: 0,
-  trumpA: [0, 0],
-};
-
-for (let index = 0; index < GAMES; index += 1) {
-  const game = newGame();
+const count = Number(process.argv[2] ?? 2000);
+for (let n = 0; n < count; n++) {
+  const game = { seats: Array.from({ length: 4 }, () => ({ type: 'human' })) };
   startGame(game);
-
-  // Every card is dealt exactly once.
-  const dealt = game.hands.flat();
-  const deck = buildDeck();
-  if (dealt.length !== 52) throw new Error('the deck was not dealt completely');
-  for (const card of deck) {
-    if (dealt.filter((c) => c === card).length !== 1) throw new Error(`card ${card} was dealt twice`);
-  }
-
-  chooseTrump(game, randomTrump());
-
-  let guard = 0;
-  while (game.status === 'playing' && guard < 200) {
-    guard += 1;
+  assert.equal(game.status, 'trump');
+  assert.deepEqual([...game.hands.flat()].sort(), buildDeck().sort());
+  assert.ok(game.declarer >= 0 && game.declarer < 4);
+  chooseTrump(game, ['S', 'H', 'D', 'C'][n % 4]);
+  assert.equal(game.turn, game.declarer);
+  const played = new Set();
+  while (game.status === 'playing') {
     const seat = game.turn;
-    const legal = legalCards(game.hands[seat], game.trick, game.trump);
-    if (!legal.length) throw new Error(`seat ${seat} has no legal card`);
-
-    // The bots play, but every now and then a random legal card is used to
-    // explore states the AI would never choose.
-    const card = Math.random() < 0.12 ? legal[Math.floor(Math.random() * legal.length)] : legal[0];
-    if (!legal.includes(card)) throw new Error('illegal card played');
+    const hand = game.hands[seat];
+    const legal = legalCards(hand, game.trick, game.trump);
+    const card = Math.random() < 0.12 ? legal[Math.floor(Math.random() * legal.length)] : chooseBotCard({ hand, trick: game.trick, trump: game.trump, seat });
+    assert.ok(legal.includes(card));
+    assert.ok(!played.has(card));
+    played.add(card);
+    const entries = [...game.trick, { seat, card }];
+    const previous = [...game.teamTricks];
     applyMove(game, seat, card);
+    if (entries.length === 4) {
+      const winner = trickWinner(entries, game.trump);
+      assert.equal(game.teamTricks[teamOf(winner)], previous[teamOf(winner)] + 1);
+      assert.equal(game.lead, winner);
+    }
+    assert.ok(played.size <= 52);
   }
-
-  if (game.status !== 'finished') throw new Error('the game did not finish');
-  if (game.tricks.length !== 13) throw new Error(`expected 13 tricks, got ${game.tricks.length}`);
-  if (game.teamTricks[0] + game.teamTricks[1] !== 13) throw new Error('the tricks do not add up');
-  if (game.hands.some((hand) => hand.length !== 0)) throw new Error('cards are left in a hand');
-  if (game.trick.length !== 0) throw new Error('the last trick was not cleared');
-  if (game.hokmTeam === null) throw new Error('the Hokm card was never captured');
-
-  // The points of the whole deck: aces, tens, kings, queens and jacks.
-  const expected = buildDeck().reduce((sum, card) => sum + cardPoints(card), 0) + 10;
-  const scored = game.teamPoints[0] + game.teamPoints[1];
-  if (scored !== expected) throw new Error(`points ${scored} !== ${expected}`);
-
-  // The trick winner must hold the highest card of the trick.
-  for (const trick of game.tricks) {
-    const winner = trick.cards.find((entry) => entry.seat === trick.winner);
-    const trump = game.trump;
-    const led = suitOf(trick.cards[0].card);
-    const trumps = trick.cards.filter((entry) => suitOf(entry.card) === trump);
-    const pool = trumps.length ? trumps : trick.cards.filter((entry) => suitOf(entry.card) === led);
-    const best = pool.reduce((a, b) => (RANK_VALUE[rankOf(b.card)] > RANK_VALUE[rankOf(a.card)] ? b : a));
-    if (best.seat !== trick.winner) throw new Error('the wrong player won the trick');
-    if (!winner) throw new Error('the winner is not in the trick');
-  }
-
-  if (game.winner === 0) stats.team0 += 1;
-  else stats.team1 += 1;
-  if (game.result.sweep) stats.sweeps += 1;
-  if (game.result.hokmBonus) stats.hokmBonus += 1;
-  if (game.teamTricks[0] === game.teamTricks[1]) stats.sixSix += 1;
-  stats.totalPoints += scored;
-  const trump = game.trump;
-  stats.trumpA[trump === 'S' ? 0 : 1] += 1;
+  assert.equal(game.teamTricks[game.winner], 7);
+  assert.ok(game.teamTricks[1 - game.winner] < 7);
+  assert.equal(game.tricks.length, game.teamTricks[0] + game.teamTricks[1]);
+  assert.equal(played.size + game.hands.flat().length, 52);
+  assert.equal(game.trick.length, 0);
 }
-
-// A second pass: the same but with a fixed trump, to see the spread.
-console.log(`simulated ${GAMES} games — every rule held.`);
-console.log(`  team 0 wins: ${stats.team0} (${((stats.team0 / GAMES) * 100).toFixed(1)}%)`);
-console.log(`  team 1 wins: ${stats.team1} (${((stats.team1 / GAMES) * 100).toFixed(1)}%)`);
-console.log(`  sweeps:      ${stats.sweeps}`);
-console.log(`  hokm bonus:  ${stats.hokmBonus}`);
-console.log(`  6-6 ties:    ${stats.sixSix}`);
-console.log(`  points/game: ${stats.totalPoints / GAMES}`);
+console.log(`Passed rule regressions and ${count} complete games.`);

@@ -1,107 +1,44 @@
-# قوانین خوکم — the rules this project implements
+# قوانین حکم
 
-Hokm (خوکم) is the four player trick taking game of Iran and the Caucasus:
-two teams of two partners, a full deck of 52 cards and 13 tricks.
+مرجع: [مقالهٔ حکم در ویکی‌پدیای فارسی](https://fa.wikipedia.org/wiki/%D8%AD%DA%A9%D9%85_%28%D8%A8%D8%A7%D8%B2%DB%8C%29)، بخش حکم چهارنفره.
 
-This document describes **exactly** what the code in `tgcloud/lib/` does, so
-the bot and the Mini App can be checked against one another.
+## نام‌ها و ترتیب برگ‌ها
 
-## The players
+چهار خال پیک، دل، خشت و خاج هستند. نام دیگر خاج، گشنیز است.
+ترتیب برگ‌ها از بالا به پایین آس، شاه، بی‌بی، سرباز، ده تا دو است.
+حکم یک خال است، نه نام آس آن خال. برگ‌ها امتیاز عددی جداگانه ندارند.
 
-* Four players sit around the table: seats `0, 1, 2, 3`.
-* Seats `0` and `2` are partners, seats `1` and `3` are partners
-  (`teamOf(seat) === seat % 2`).
-* The order of play is `0 → 1 → 2 → 3 → 0 …`.
-* The declarer (بازیکن اعلان‌کننده) is seat `0` — the player who created the
-  table. In a solo game that is the human, in a private table it is the host.
+## شروع و نوبت‌ها
 
-## The cards
+چهار بازیکن دو تیم تشکیل می‌دهند و یارها روبه‌روی هم می‌نشینند.
+صندلی‌های صفر و دو یارند و صندلی‌های یک و سه یارند.
+نوبت از صفر به یک، دو و سه می‌رود و نمایش میز پادساعتگرد است.
+حاکم نخست با اولین آس در یک دستهٔ برزده تعیین می‌شود؛ میزبان لزوماً حاکم نیست.
+برای پخش اصلی دوباره بر می‌زنیم و از حاکم، بسته‌های پنج، چهار و چهار برگی می‌دهیم.
 
-A card is a two character string: the rank, then the suit.
+سرور ترتیب کامل پخش را از قبل نگه می‌دارد، ولی پیش از انتخاب حکم فقط پنج برگ نخست هر بازیکن را به او نشان می‌دهد. هشت برگ باقی‌مانده به پاسخ عمومی راه پیدا نمی‌کند. ربات حاکم بر اساس اولین برگ همین پنج برگ حکم را تعیین می‌کند.
 
-| rank | `2 3 4 5 6 7 8 9 T J Q K A` |
-|------|------------------------------|
-| suit | `S` spades (گشنیز), `H` hearts (دل), `D` diamonds (خشت), `C` clubs (خاج) |
+## بازی هر دست
 
-The whole deck is dealt, 13 cards per seat.
+حاکم دست نخست را آغاز می‌کند. اگر بازیکن از خال زمینه برگ داشته باشد باید همان خال را بازی کند. در غیر این صورت هر برگ مجاز است؛ بریدن و بالاتر بریدن اجباری نیست.
+بالاترین حکم برندهٔ دست است. بدون حکم، بالاترین برگ خال زمینه برنده است.
+برندهٔ هر دست، دست بعدی را آغاز می‌کند.
 
-## The trump — «خوکم»
+## برد و امتیاز
 
-1. The declarer names the trump suit. The ace of the trump suit is the
-   **Hokm card** (کارت خوکم).
-2. The declarer leads the first trick.
+بازی به محض گرفتن هفت دست توسط یک تیم تمام می‌شود.
+برد عادی یک امتیاز دارد. برد هفت بر صفر، کت است و دو امتیاز دارد.
+اگر تیم حاکم کت شود، حاکم‌کتی است و تیم مقابل سه امتیاز می‌گیرد.
+گرفتن آس حکم هیچ شرط ویژه‌ای برای برد نیست و امتیاز برگ یا پاداش دست آخر وجود ندارد.
+فیلدهای قدیمی `hokmTeam`، `sweep` و `hokmBonus` فقط برای سازگاری داده‌ها نگه داشته شده‌اند و در قوانین جدید نقشی ندارند.
 
-## Playing a card
+## محدودهٔ نسخه
 
-1. **Follow the suit that was led.** If you hold a card of that suit, you must
-   play one of them.
-2. **Otherwise play a trump.** If you have no card of the led suit, you must
-   play a trump. If you have no trump either, any card is allowed.
-3. **Beat the trump.** When a trump is already in the trick and you hold a
-   higher trump, you *must* play a higher one — the classic
-   «باید خوکم بزند» rule. This also applies when the trump was the led suit.
-4. The winner of a trick leads the next one.
+هر میز فعلاً یک بازی مستقل تا هفت دست است، نه یک دور کامل تا هفت امتیاز.
+ادامهٔ اختیاری برای بام، انتقال حاکم در بازی بعدی، کوپ دستی و درخواست پخش مجدد پیاده‌سازی نشده‌اند. این محدودیت در راهنمای برنامه و ربات نیز بیان شده است.
 
-The set of legal cards is computed by `legalCards()` in
-`tgcloud/lib/hokm-rules.js` (mirrored in `src/lib/hokm.ts`).
+## آزمون
 
-## Winning a trick
-
-* If somebody played a trump, the highest trump wins the trick.
-* Otherwise the highest card of the led suit wins it.
-* The team of the winner takes the trick.
-
-## Winning the game
-
-* A team that takes **7 of the 13 tricks** wins the round.
-* **Sweep:** a team that takes all 13 tricks *loses* the round — the other
-  team wins it.
-* **Hokm card rule** (`HOKM_CARD_RULE` in `tgcloud/lib/hokm-rules.js`): if the
-  team that won by tricks did not capture the Hokm card, the round goes to the
-  other team. Set the constant to `false` to play the plain variant.
-* The card points are a display value and a safety net for a 6–6 split (which
-  cannot happen with 13 tricks, but the code handles it anyway).
-
-## The points
-
-| card | points |
-|------|--------|
-| آس (A) | 10 |
-| ده (T) | 10 |
-| شاه (K) | 4 |
-| خانم (Q) | 3 |
-| ب (J) | 2 |
-| everything else | 0 |
-
-The points of all 52 cards add up to **116**; the last trick of the game is
-worth **10 extra** points, so a full game is worth **126**.
-
-## The bots
-
-`tgcloud/lib/hokm-ai.js` plays the same rules as the humans:
-
-* **Leading:** the longest side suit, with its lowest card. With five or more
-  trumps the bot pulls the opponents' trumps instead.
-* **Following:** the lowest card that wins the trick, unless the partner is
-  currently winning it — the bot does not beat its own partner.
-* When it cannot win, it throws away its cheapest card.
-
-`scripts/simulate.mjs` plays thousands of complete bot games and checks every
-rule (all 52 cards are played exactly once, 13 tricks, the right trick
-winner, the sum of the points).
-
-## The flow of a game
-
-```
-createGame  →  status "trump"  →  chooseTrump  →  status "playing"
-                                                       ↓
-                                              playCard (human)
-                                                       ↓
-                                              runBots (up to 3 cards)
-                                                       ↓
-                                              13 tricks later → "finished"
-```
-
-A private table starts in the status `waiting` and only deals the cards when
-the fourth player has taken a seat (or when the host fills the empty seats
-with bots).
+منبع قوانین `tgcloud/lib/hokm-rules.js` و نسخهٔ متناظر رابط `src/lib/hokm.ts` است.
+`scripts/check-mirror.ts` همسانی آن‌ها را می‌سنجد.
+`scripts/simulate.mjs` قوانین پایه، کت، حاکم‌کتی و هزاران بازی کامل را بررسی می‌کند.

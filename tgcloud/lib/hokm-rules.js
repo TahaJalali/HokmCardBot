@@ -1,5 +1,5 @@
 /**
- * The rules of Hokm (خوکم) — the source of truth for the bot.
+ * The rules of Hokm (حکم) — the source of truth for the bot.
  *
  * The Mini App mirrors the pure helpers in `src/lib/hokm.ts`; keep the two
  * files in sync.
@@ -33,19 +33,9 @@ export const RANK_VALUE = {
 
 export const SUIT_SYMBOL = { S: '♠', H: '♥', D: '♦', C: '♣' };
 
-export const SUIT_NAME = { S: 'گشنیز', H: 'دل', D: 'خشت', C: 'خاج' };
+export const SUIT_NAME = { S: 'پیک', H: 'دل', D: 'خشت', C: 'خاج' };
 
-export const RANK_NAME = { A: 'آس', T: 'ده', J: 'ب', Q: 'خ', K: 'شاه' };
-
-/**
- * When the winning team does not capture the Hokm card (the ace of trumps)
- * the round goes to the other team. This is the classic "خوکم" rule; set it
- * to `false` to play the plain "most tricks wins" variant.
- */
-export const HOKM_CARD_RULE = true;
-
-/** The last trick of the game is worth this many extra points. */
-export const LAST_TRICK_BONUS = 10;
+export const RANK_NAME = { A: 'آس', T: 'ده', J: 'سرباز', Q: 'بی‌بی', K: 'شاه' };
 
 export function rankOf(card) {
   return card[0];
@@ -60,20 +50,9 @@ export function teamOf(seat) {
   return seat % 2;
 }
 
-export function cardPoints(card) {
-  switch (rankOf(card)) {
-    case 'A':
-    case 'T':
-      return 10;
-    case 'K':
-      return 4;
-    case 'Q':
-      return 3;
-    case 'J':
-      return 2;
-    default:
-      return 0;
-  }
+export function cardPoints(_card) {
+  return 0; // Cards have ranks, not scoring values in Hokm.
+
 }
 
 export function buildDeck() {
@@ -94,20 +73,17 @@ export function shuffle(deck) {
   return out;
 }
 
-/** Deal the whole deck: 13 cards per seat, seat 0 first. */
-export function deal() {
+/** Reserve the 5–4–4 deal, starting with the ruler. */
+export function deal(declarer = 0) {
   const deck = shuffle(buildDeck());
   const hands = [[], [], [], []];
   let card = 0;
-  for (let round = 0; round < 13; round += 1) {
-    for (let seat = 0; seat < SEAT_COUNT; seat += 1) {
-      hands[seat].push(deck[card]);
-      card += 1;
+  for (const count of [5, 4, 4]) {
+    for (let offset = 0; offset < 4; offset += 1) {
+      const seat = (declarer + offset) % 4;
+      hands[seat].push(...deck.slice(card, card + count));
+      card += count;
     }
-  }
-  // Sort every hand by rank so the UI and the AI see a stable order.
-  for (const hand of hands) {
-    hand.sort((a, b) => RANK_VALUE[rankOf(b)] - RANK_VALUE[rankOf(a)] || a.localeCompare(b));
   }
   return hands;
 }
@@ -141,14 +117,7 @@ export function beatsCard(card, best, trump) {
   return RANK_VALUE[rankOf(card)] > RANK_VALUE[rankOf(best)];
 }
 
-/**
- * The cards a seat may legally play.
- *
- * - The suit that was led must be followed.
- * - Without that suit a trump must be played.
- * - If a trump is in the trick and the seat holds a higher one, it has to
- *   beat it (the classic "باید خوکم بزند" rule).
- */
+/** Follow the led suit when possible; otherwise any card is legal. */
 export function legalCards(hand, trick, trump) {
   if (!trick.length || !trump) return [...hand];
 
@@ -156,17 +125,7 @@ export function legalCards(hand, trick, trump) {
   const following = hand.filter((card) => suitOf(card) === led);
   if (following.length) return following;
 
-  const trumps = hand.filter((card) => suitOf(card) === trump);
-  if (!trumps.length) return [...hand];
-
-  const playedTrumps = trick.filter((entry) => suitOf(entry.card) === trump);
-  if (playedTrumps.length) {
-    const highest = Math.max(...playedTrumps.map((entry) => RANK_VALUE[rankOf(entry.card)]));
-    const beaters = trumps.filter((card) => RANK_VALUE[rankOf(card)] > highest);
-    if (beaters.length) return beaters;
-  }
-
-  return trumps;
+  return [...hand];
 }
 
 export function isLegal(card, hand, trick, trump) {

@@ -6,8 +6,9 @@
  * Telegram every call goes to the real endpoints of the platform.
  */
 import {
-  cardPoints,
   deal,
+  buildDeck,
+  shuffle,
   legalCards,
   RANK_VALUE,
   rankOf,
@@ -64,7 +65,8 @@ function seatOfUser(game: MockGame, tgId: number): number {
 }
 
 function startGame(game: MockGame): void {
-  game.hands = deal();
+  game.declarer = shuffle(buildDeck()).findIndex((card) => card[0] === 'A') % 4;
+  game.hands = deal(game.declarer);
   game.trick = [];
   game.tricks = [];
   game.teamTricks = [0, 0];
@@ -75,6 +77,10 @@ function startGame(game: MockGame): void {
   game.turn = game.declarer;
   game.lead = game.declarer;
   game.status = 'trump';
+  if (game.seats[game.declarer]?.type === 'bot') {
+    chooseTrump(game, game.hands[game.declarer][0][1] as Suit);
+    runBots(game);
+  }
 }
 
 function chooseTrump(game: MockGame, trump: Suit): void {
@@ -98,21 +104,17 @@ function applyMove(game: MockGame, seat: number, card: Card): void {
   }
 
   const winner = trickWinner(game.trick, game.trump) ?? 0;
-  let points = game.trick.reduce((sum, entry) => sum + cardPoints(entry.card), 0);
-  if (game.tricks.length + 1 === 13) points += 10;
+  const points = 1;
 
   const team = teamOf(winner);
   game.teamTricks[team] += 1;
-  game.teamPoints[team] += points;
 
-  const hokmCard = `A${game.trump}`;
-  if (game.trick.some((entry) => entry.card === hokmCard)) game.hokmTeam = team;
 
   game.tricks.push({ cards: [...game.trick], winner, points });
   game.trick = [];
   game.lead = winner;
 
-  if (game.tricks.length === 13) {
+  if (game.teamTricks[team] === 7) {
     finishGame(game);
   } else {
     game.turn = winner;
@@ -120,43 +122,22 @@ function applyMove(game: MockGame, seat: number, card: Card): void {
 }
 
 function finishGame(game: MockGame): void {
-  const [first, second] = game.teamTricks;
-  let winner = 0;
-  let sweep = false;
-  let hokmBonus = false;
-
-  if (first === 13) {
-    winner = 1;
-    sweep = true;
-  } else if (second === 13) {
-    winner = 0;
-    sweep = true;
-  } else if (first > second) {
-    winner = 0;
-  } else if (second > first) {
-    winner = 1;
-  } else {
-    winner = game.teamPoints[0] > game.teamPoints[1] ? 0 : 1;
-  }
-
-  if (!sweep && game.hokmTeam !== null && game.hokmTeam !== winner) {
-    hokmBonus = true;
-    winner = 1 - winner;
-  }
-
+  const winner = game.teamTricks[0] >= 7 ? 0 : 1;
+  const kot = game.teamTricks[1 - winner] === 0;
+  const score = kot ? (teamOf(game.declarer) === winner ? 2 : 3) : 1;
+  game.teamPoints = [0, 0];
+  game.teamPoints[winner] = score;
   game.winner = winner;
   game.status = 'finished';
   game.result = {
     winner,
-    sweep,
-    hokmBonus,
+    sweep: false,
+    hokmBonus: false,
     teamTricks: [...game.teamTricks],
     teamPoints: [...game.teamPoints],
-    reason: sweep
-      ? 'یک تیم همه‌ی ۱۳ ترک را گرفت؛ بازی به تیم دیگر رسید.'
-      : hokmBonus
-        ? 'تیم برنده کارت خوکم را نگرفته بود؛ دست به تیم مقابل رسید.'
-        : `تیم ${winner === 0 ? 'شما' : 'مقابل'} با ${game.teamTricks[winner]} ترک برنده شد.`,
+    reason: kot
+      ? `برد هفت بر صفر؛ ${score === 3 ? 'حاکم‌کتی و سه امتیاز' : 'کت و دو امتیاز'} برای تیم برنده.`
+      : 'تیم برنده با گرفتن هفت دست، یک امتیاز گرفت.',
   };
 }
 
@@ -202,7 +183,7 @@ function botCard(hand: Card[], trick: TrickEntry[], trump: Suit | null, seat: nu
 function runBots(game: MockGame): { seat: number; card: Card }[] {
   const played: { seat: number; card: Card }[] = [];
   let guard = 0;
-  while (game.status === 'playing' && game.seats[game.turn]?.type === 'bot' && guard < 16) {
+  while (game.status === 'playing' && game.seats[game.turn]?.type === 'bot' && guard < 52) {
     guard += 1;
     const seat = game.turn;
     const card = botCard(game.hands[seat], game.trick, game.trump, seat);
@@ -225,14 +206,14 @@ function publicState(game: MockGame, viewerSeat: number): PublicGame {
     trick: game.trick,
     trickNo: game.tricks.length + 1,
     tricks: game.tricks,
-    handCounts: game.hands.map((hand) => hand.length),
+    handCounts: game.hands.map((hand) => game.status === 'trump' ? 5 : hand.length),
     teamTricks: [...game.teamTricks],
     teamPoints: [...game.teamPoints],
     seats: game.seats.map((seat) => ({ type: seat.type, name: seat.name, tgId: seat.tgId })),
     hokmTeam: game.hokmTeam,
     winner: game.winner,
     result: game.result,
-    hand: viewerSeat >= 0 ? [...game.hands[viewerSeat]] : [],
+    hand: viewerSeat >= 0 ? game.hands[viewerSeat].slice(0, game.status === 'trump' ? 5 : 13) : [],
     version: game.version,
   };
 }
@@ -336,7 +317,7 @@ export async function mockCall<T>(name: string, input: unknown): Promise<T> {
       const game = store.get(String(body.gameId ?? ''));
       if (!game) throw new Error('این بازی پیدا نشد');
       const seat = seatOfUser(game, DEV_USER.id);
-      if (game.status !== 'trump' || seat !== game.declarer) throw new Error('الان نوبت انتخاب خوکم نیست');
+      if (game.status !== 'trump' || seat !== game.declarer) throw new Error('الان نوبت انتخاب حکم نیست');
       chooseTrump(game, String(body.trump ?? 'S') as Suit);
       return response(game, seat) as T;
     }
@@ -364,7 +345,7 @@ export async function mockCall<T>(name: string, input: unknown): Promise<T> {
         item.type === 'empty' ? { type: 'bot', name: BOT_NAMES[index] } : item,
       );
       startGame(game);
-      if (game.seats[game.declarer]?.type === 'bot') {
+      if (game.status === 'trump' && game.seats[game.declarer]?.type === 'bot') {
         chooseTrump(game, (['S', 'H', 'D', 'C'] as Suit[])[Math.floor(Math.random() * 4)]);
       }
       const moves = runBots(game);

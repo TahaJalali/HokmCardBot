@@ -3,7 +3,7 @@ import { api, EndpointError } from 'sdk';
 import { loadGame, saveGame, seatOfUser } from '../lib/game.js';
 import { getBotInfo, miniAppLink } from '../lib/config.js';
 
-const TRUMP_LABELS = { S: '♠️ گشنیز', H: '♥️ دل', D: '♦️ خشت', C: '♣️ خاج' };
+const TRUMP_LABELS = { S: '♠️ پیک', H: '♥️ دل', D: '♦️ خشت', C: '♣️ خاج' };
 
 /** Handle the inline buttons of the bot. */
 export default async function (callbackQuery, ctx) {
@@ -23,7 +23,7 @@ export default async function (callbackQuery, ctx) {
 
   try {
     if (data === 'rules') {
-      await answer('قوانین خوکم را با دستور /rules ببینید');
+      await answer('قوانین حکم را با دستور /rules ببینید');
       return;
     }
 
@@ -40,7 +40,7 @@ export default async function (callbackQuery, ctx) {
 
       let status = 'در حال بازی';
       if (game.status === 'waiting') status = 'در انتظار بازیکن';
-      else if (game.status === 'trump') status = 'در انتظار انتخاب خوکم';
+      else if (game.status === 'trump') status = 'در انتظار انتخاب حکم';
       else if (game.status === 'finished') status = 'پایان یافته';
 
       const keyboard = [];
@@ -59,7 +59,7 @@ export default async function (callbackQuery, ctx) {
         await api.editMessageText({
           chat_id: message.chat.id,
           message_id: message.message_id,
-          text: `میز \`${gameId}\`\nوضعیت: ${status}\nترک‌ها: ${game.teamTricks[0]} - ${game.teamTricks[1]}`,
+          text: `میز \`${gameId}\`\nوضعیت: ${status}\nدست‌ها: ${game.teamTricks[0]} - ${game.teamTricks[1]}`,
           reply_markup: { inline_keyboard: keyboard },
         });
       }
@@ -78,12 +78,12 @@ export default async function (callbackQuery, ctx) {
 
       const seat = from?.id ? seatOfUser(game, from.id) : -1;
       if (seat < 0 || seat !== game.declarer) {
-        await answer('فقط بازیکن اعلان‌کننده می‌تواند خوکم را انتخاب کند', true);
+        await answer('فقط حاکم می‌تواند حکم را انتخاب کند', true);
         return;
       }
 
       if (game.status !== 'trump') {
-        await answer('الان نوبت انتخاب خوکم نیست', true);
+        await answer('الان نوبت انتخاب حکم نیست', true);
         return;
       }
 
@@ -93,7 +93,7 @@ export default async function (callbackQuery, ctx) {
       game.lead = game.declarer;
       await saveGame(game);
 
-      await answer(`خوکم: ${TRUMP_LABELS[suit] ?? suit}`);
+      await answer(`حکم: ${TRUMP_LABELS[suit] ?? suit}`);
       return;
     }
 

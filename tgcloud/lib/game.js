@@ -195,7 +195,7 @@ export function publicState(game, viewerSeat) {
     trick: game.trick,
     trickNo: game.tricks.length + 1,
     tricks: game.tricks,
-    handCounts: game.hands.map((hand) => hand.length),
+    handCounts: game.hands.map((hand) => game.status === 'trump' ? 5 : hand.length),
     teamTricks: [...game.teamTricks],
     teamPoints: [...game.teamPoints],
     seats: game.seats.map((seat) => ({
@@ -206,7 +206,7 @@ export function publicState(game, viewerSeat) {
     hokmTeam: game.hokmTeam,
     winner: game.winner,
     result: game.result,
-    hand: viewerSeat >= 0 ? [...game.hands[viewerSeat]] : [],
+    hand: viewerSeat >= 0 ? game.hands[viewerSeat].slice(0, game.status === 'trump' ? 5 : 13) : [],
     version: game.version,
   };
 }

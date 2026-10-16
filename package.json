@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "بازی خوکم (Hokm) — a Persian trick-taking card game as a Telegram Mini App on the tgcloud serverless platform",
+  "description": "بازی حکم (Hokm) — a Persian trick-taking card game as a Telegram Mini App on the tgcloud serverless platform",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",

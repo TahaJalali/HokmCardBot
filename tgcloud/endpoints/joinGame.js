@@ -36,10 +36,10 @@ export default async function (input, ctx) {
   if (full) {
     startGame(game);
     await saveGame(game);
-    await notify(game, 'بازی خوکم شروع شد! 🎴 خوکم (سوت) را انتخاب کنید.');
+    await notify(game, 'بازی حکم شروع شد! 🎴 خال حکم را انتخاب کنید.');
   } else {
     await saveGame(game);
-    await notify(game, `${user.name} به میز ${game.id} پیوست. (${game.seats.filter((item) => item.type === 'human').length} بازیکن)`);
+    await notify(game, `${user.name} به میز ${game.id} پیوست؛ ${game.seats.filter((item) => item.type === 'human').length} بازیکن`);
   }
 
   return {
