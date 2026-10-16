@@ -39,6 +39,7 @@ export default async function (input, ctx) {
     await notify(game, 'بازی خوکم شروع شد! 🎴 خوکم (سوت) را انتخاب کنید.');
   } else {
     await saveGame(game);
+    await notify(game, `${user.name} به میز ${game.id} پیوست. (${game.seats.filter((item) => item.type === 'human').length} بازیکن)`);
   }
 
   return {

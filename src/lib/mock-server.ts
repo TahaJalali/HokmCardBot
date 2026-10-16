@@ -371,6 +371,19 @@ export async function mockCall<T>(name: string, input: unknown): Promise<T> {
       return response(game, seat, moves) as T;
     }
 
+    case 'leaveGame': {
+      const game = store.get(String(body.gameId ?? ''));
+      if (!game) throw new Error('این بازی پیدا نشد');
+      const seat = seatOfUser(game, DEV_USER.id);
+      if (seat >= 0) {
+        game.seats[seat] =
+          game.status === 'waiting'
+            ? { type: 'empty', name: '' }
+            : { type: 'bot', name: 'ربات جانشین' };
+      }
+      return response(game, -1) as T;
+    }
+
     default:
       throw new Error(`endpoint ناشناخته: ${name}`);
   }

@@ -14,3 +14,13 @@ export async function notify(game, text) {
     }
   }
 }
+
+/** Send a message to one chat (used to announce a turn). */
+export async function notifyOne(chatId, text) {
+  if (!chatId) return;
+  try {
+    await api.sendMessage({ chat_id: chatId, text, disable_web_page_preview: true });
+  } catch (error) {
+    console.warn('could not notify a player', error?.message ?? error);
+  }
+}

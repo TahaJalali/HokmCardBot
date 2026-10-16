@@ -118,4 +118,5 @@ export const api = {
   playCard: (gameId: string, card: string) =>
     callEndpoint<import('@/lib/types').GameResponse>('playCard', { gameId, card }),
   fillBots: (gameId: string) => callEndpoint<import('@/lib/types').GameResponse>('fillBots', { gameId }),
+  leaveGame: (gameId: string) => callEndpoint<import('@/lib/types').GameResponse>('leaveGame', { gameId }),
 };

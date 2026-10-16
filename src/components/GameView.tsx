@@ -193,7 +193,7 @@ export function GameView({
         </button>
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             <span className="text-[11px] text-white/50">میز</span>
             <button
               type="button"
@@ -218,6 +218,22 @@ export function GameView({
         <button type="button" className="btn btn-ghost !px-2.5 !py-1.5 text-xs" onClick={() => setShowRules(true)}>
           قوانین
         </button>
+
+        {you.seat >= 0 ? (
+          <button
+            type="button"
+            className="btn btn-ghost !px-2.5 !py-1.5 text-xs"
+            onClick={() => {
+              if (!window.confirm('از این میز خارج می‌شوید؟')) return;
+              void api
+                .leaveGame(game.id)
+                .catch(() => undefined)
+                .finally(() => onExit());
+            }}
+          >
+            خروج
+          </button>
+        ) : null}
       </header>
 
       {/* the table */}

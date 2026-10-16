@@ -10,7 +10,7 @@ import {
   viewerInfo,
 } from '../lib/game.js';
 import { legalCards } from '../lib/hokm-rules.js';
-import { notify } from '../lib/notify.js';
+import { notify, notifyOne } from '../lib/notify.js';
 
 /** Play a card — the bots answer right away. */
 export default async function (input, ctx) {
@@ -61,6 +61,15 @@ export default async function (input, ctx) {
       game,
       `بازی خوکم تمام شد.\n${result?.reason ?? ''}\nترک‌ها: ${game.teamTricks[0]} - ${game.teamTricks[1]}\nامتیاز: ${game.teamPoints[0]} - ${game.teamPoints[1]}`,
     );
+  } else if (game.seats[game.turn]?.type === 'human') {
+    // A human plays next — let them know in the chat.
+    const next = game.seats[game.turn];
+    if (next.chatId) {
+      await notifyOne(
+        next.chatId,
+        `نوبت شماست! ترک ${game.tricks.length + 1} از ۱۳ — میز ${game.id}`,
+      );
+    }
   }
 
   return {
