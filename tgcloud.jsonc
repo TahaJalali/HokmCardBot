@@ -1,7 +1,11 @@
 {
-  // To host a Mini App, uncomment and set "source" to its build output folder:
-  // "static": {
-  //   "source": "dist"
-  // },
+  // The Mini App front-end lives in the project root (Vite) and is built into
+  // `dist/`. `tgcloud push` uploads that folder as the Mini App's static site.
+  "static": {
+    "source": "dist",
+    "spa": true,
+    // The files in /assets are content hashed — they can be cached forever.
+    "immutable": ["/assets/*"]
+  },
   "$schema": "./node_modules/@tgcloud/cli/schema/tgcloud.json"
 }

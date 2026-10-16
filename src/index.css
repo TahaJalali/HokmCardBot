@@ -1,0 +1,154 @@
+@import 'tailwindcss';
+@import 'vazirmatn/Vazirmatn-Variable-font-face.css';
+
+@theme {
+  --font-sans: 'Vazirmatn', ui-sans-serif, system-ui, 'Segoe UI', Tahoma, sans-serif;
+
+  --color-felt-950: #03180f;
+  --color-felt-900: #052018;
+  --color-felt-800: #06342a;
+  --color-felt-700: #0a4436;
+  --color-felt-600: #0f5945;
+  --color-felt-500: #16715a;
+
+  --color-gold-100: #fdf6dd;
+  --color-gold-200: #fbeec2;
+  --color-gold-300: #f3d27a;
+  --color-gold-400: #e3b23c;
+  --color-gold-500: #c9971f;
+  --color-gold-600: #a37714;
+
+  --color-ink-900: #10161c;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--color-felt-900);
+    background-image:
+      radial-gradient(120% 70% at 50% -10%, rgba(22, 113, 90, 0.55) 0%, transparent 60%),
+      radial-gradient(90% 60% at 50% 110%, rgba(3, 24, 15, 0.9) 0%, transparent 70%);
+    background-attachment: fixed;
+    color: #f4f7f5;
+    font-family: var(--font-sans);
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+  }
+
+  button {
+    font-family: inherit;
+  }
+}
+
+@layer components {
+  /* The green felt of the table. */
+  .felt {
+    background-color: var(--color-felt-800);
+    background-image:
+      radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.07) 0%, transparent 55%),
+      radial-gradient(circle at 50% 42%, rgba(3, 24, 15, 0.55) 0%, transparent 75%);
+  }
+
+  .panel {
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    background: rgba(4, 26, 20, 0.62);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(6px);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 0.9rem;
+    padding: 0.7rem 1.1rem;
+    font-weight: 700;
+    transition:
+      transform 0.12s ease,
+      filter 0.15s ease,
+      opacity 0.15s ease;
+    cursor: pointer;
+  }
+
+  .btn:active {
+    transform: scale(0.97);
+  }
+
+  .btn-primary {
+    background: linear-gradient(180deg, var(--color-gold-300), var(--color-gold-500));
+    color: #2a1d02;
+    box-shadow: 0 6px 16px rgba(201, 151, 31, 0.35);
+  }
+
+  .btn-ghost {
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: #eef4f1;
+  }
+
+  .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+@layer utilities {
+  .card-shadow {
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.35),
+      0 6px 14px rgba(0, 0, 0, 0.4);
+  }
+
+  .animate-deal {
+    animation: deal 0.45s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+  }
+
+  .animate-pop {
+    animation: pop 0.25s ease-out both;
+  }
+
+  .animate-fade-up {
+    animation: fade-up 0.3s ease-out both;
+  }
+}
+
+@keyframes deal {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.9) rotate(-4deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
