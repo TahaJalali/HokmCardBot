@@ -1,162 +1,290 @@
-# حکم — Hokm Card Bot
+# 🎴 ربات بازی حکم (نسخه بهبودیافته و کامل)
 
-A Persian **Hokm** (حکم) game as a **Telegram Mini App**, running on the
-tgcloud serverless platform. Four players, two teams and a trump suit chosen by the حاکم.
-Each table currently plays one independent game, ending at seven tricks.
+توسعه و پشتیبانی: [@NamePlusUser](https://t.me/NamePlusUser)  
+کانال سورس‌ها و آپدیت‌ها: [@BotSorce](https://t.me/BotSorce)
 
-* **Mini App front-end** — Vite + React + TypeScript + Tailwind (v4), in the
-  project root, built into `dist/`.
-* **Bot back-end** — serverless modules in `tgcloud/` (database schema, shared
-  libraries, update handlers, endpoints).
-* **No server** — every request is a stateless function; the position of a
-  game lives in the database.
+ربات تلگرامی برای بازی گروهی **حکم** با پشتیبانی از ساخت میز در گروه و حالت اینلاین، تیم‌های ۲×۲، انتخاب حاکم و حکم، پیگیری تریک و امتیاز، پیام خصوصی دست‌ها، پنل ادمین و Persistence.
 
 ---
 
-## Quick start
+## ✨ ویژگی‌های این نسخه (بهبودیافته نسبت به سورس اصلی)
 
-```bash
-npm install          # install the front-end and the tgcloud CLI
-npm run dev          # the Mini App on http://localhost:5173 (with a bot-less mock)
-npm run build        # type check + build into dist/
-npm run deploy       # build + tgcloud push
-npx tgcloud migrate  # apply the database schema
-```
-
-Outside Telegram the Mini App falls back to an in-browser mock
-(`src/lib/mock-server.ts`), so the whole game can be played locally.
-
-### The first deploy
-
-```bash
-npx tgcloud login      # link this project to a bot
-npm run deploy         # pushes the modules and the Mini App
-npx tgcloud migrate    # creates the tables
-```
-
-`tgcloud push` prints the URL of the Mini App
-(`https://app<app_id>.tgcloud.ai/`). Put it into `tgcloud/lib/config.js`:
-
-```js
-export const MINI_APP_URL = 'https://app123456.tgcloud.ai';
-```
-
-Without it the bot falls back to the `t.me` direct link of the bot's main
-Mini App.
+| ویژگی | توضیح |
+|-------|--------|
+| ساخت میز در گروه | دستور `/table [عنوان]` |
+| ساخت میز اینلاین | `@نام_ربات ایجاد میز` |
+| خروج از صندلی / بازی | دکمه «خروج از صندلی» و «خروج از بازی» |
+| لغو میز توسط سازنده | دکمه «لغو میز» قبل از شروع |
+| نمایش کارت‌های تریک فعلی | در پیام میز و در پیام خصوصی |
+| ویرایش پیام‌های خصوصی | به جای اسپم کردن پیام جدید، پیام قبلی ویرایش می‌شود |
+| پایان بازی در ۷ ست | قابل تنظیم در `config.py` با `SETS_TO_WIN` |
+| پاک‌سازی خودکار میزهای قدیمی | میزهای شروع‌نشده بعد از ۱ ساعت پاک می‌شوند |
+| پنل ادمین کامل | `/admin`، `/close`، `/broadcast`، `/cleanup` |
+| آمار کلی | تعداد میز ساخته‌شده، بازی شروع‌شده و تمام‌شده |
+| قوانین کامل‌تر | فالو سوییت اجباری + منطق برنده تریک صحیح |
+| دستور `/rules` | نمایش قوانین مختصر |
+| Persistence | ذخیره وضعیت با `PicklePersistence` |
 
 ---
 
-## The project
+## 📋 پیش‌نیازها
+
+- پایتون **۳.۸** یا بالاتر
+- دسترسی به اینترنت برای اتصال به تلگرام
+- یک ربات ساخته‌شده در [@BotFather](https://t.me/BotFather)
+
+---
+
+## 🚀 آموزش نصب گام‌به‌گام
+
+### ۱. ساخت ربات در BotFather
+
+1. به [@BotFather](https://t.me/BotFather) بروید.
+2. دستور `/newbot` را بزنید و نام و یوزرنیم ربات را انتخاب کنید.
+3. **توکن** ربات را کپی کنید (مثل `123456:ABC-DEF...`).
+4. دستور `/setinline` را بزنید و اینلاین را برای ربات فعال کنید (برای ساخت میز اینلاین ضروری است).
+5. (اختیاری) `/setprivacy` را روی **Disable** بگذارید تا ربات پیام‌های گروه را بهتر ببیند (برای این ربات الزامی نیست چون از دستور و callback استفاده می‌کند).
+
+### ۲. دریافت آیدی عددی خودتان
+
+- ربات را استارت کنید و دستور `/id` را بزنید.
+- یا از ربات‌هایی مثل [@userinfobot](https://t.me/userinfobot) استفاده کنید.
+- آیدی عددی را یادداشت کنید (مثال: `123456789`).
+
+### ۳. دانلود و آماده‌سازی فایل‌ها
+
+فایل زیپ را باز کنید. ساختار پوشه باید این‌طور باشد:
 
 ```
-├── index.html               the Mini App shell (RTL, Persian)
-├── vite.config.ts           Vite + Tailwind + the `@/` alias
-├── src/                     the Mini App (front-end)
-│   ├── components/
-│   │   ├── PlayingCard.tsx  the card component (ported from the project helper)
-│   │   ├── GameCard.tsx     the same component for the game's card codes
-│   │   ├── GameView.tsx     the table: seats, trick, hand
-│   │   ├── HandBar.tsx      the fanned hand of the player
-│   │   ├── TrickArea.tsx    the cards of the running trick
-│   │   ├── SeatPanel.tsx    a player at the table
-│   │   ├── Lobby.tsx        the menu: quick game, private table, join
-│   │   ├── TrumpPicker.tsx  the choice of the trump suit
-│   │   ├── ResultOverlay.tsx the result of a finished game
-│   │   └── RulesSheet.tsx   the rules
-│   ├── helpers/
-│   │   ├── classname-helper.ts   the `cn()` helper
-│   │   └── telegram.ts           the Telegram Web App bridge
-│   └── lib/
-│       ├── hokm.ts          the rules (mirror of the server)
-│       ├── types.ts         the contract of the endpoints
-│       └── mock-server.ts   the endpoints without Telegram
-├── tgcloud/                 the bot (server side)
-│   ├── schema.js            the tables
-│   ├── lib/
-│   │   ├── hokm-rules.js    the rules — the source of truth
-│   │   ├── hokm-play.js     the pure game logic (no platform imports)
-│   │   ├── hokm-ai.js       the bots
-│   │   ├── game.js          the life cycle + the database
-│   │   ├── user.js          the Telegram users
-│   │   ├── config.js        the Mini App URL and the bot info
-│   │   ├── api.js           the helpers of the endpoints
-│   │   └── notify.js        the messages to the players
-│   ├── handlers/            message.js, callback_query.js
-│   └── endpoints/           getLobby, createGame, getGame, joinGame,
-│                            chooseTrump, playCard, fillBots, leaveGame
-├── scripts/
-│   ├── simulate.mjs         plays thousands of bot games and checks the rules
-│   └── check-mirror.ts      proves the client and the server agree
-└── docs/hokm-rules.md       the rules as they are implemented
+Hokm/
+├── config.py
+├── hokm.py
+├── requirements.txt
+└── README.md
 ```
 
-## The endpoints
+### ۴. نصب وابستگی‌ها
 
-The Mini App talks to the bot through the platform's endpoints — never with a
-hand written `fetch`:
-
-```js
-Telegram.WebApp.Serverless.call('playCard', { gameId, card }, (err, result) => …)
-```
-
-| endpoint      | what it does                                              |
-|---------------|-----------------------------------------------------------|
-| `getLobby`    | the games of the caller, the bot name, the Mini App URL    |
-| `createGame`  | a new game (`solo` against bots, or `room` for friends)    |
-| `getGame`     | the state of a game (the other hands stay hidden)          |
-| `joinGame`    | take a seat at a table                                     |
-| `chooseTrump` | the declarer names the trump suit                          |
-| `playCard`    | play a card — the bots answer in the same call             |
-| `fillBots`    | fill the empty seats with bots and start                   |
-| `leaveGame`   | leave a table                                             |
-
-Every endpoint answers with `{ game, you, moves }`. `you` is the seat of the
-caller, `moves` are the cards the bots played while serving the call (the
-Mini App animates them).
-
-## The bot
-
-```
-/start          welcome + the button of the Mini App
-/new            a new game against the bots
-/games          the games you take part in
-/rules          the rules
-/link           the address of the Mini App
-```
-
-`/start join_<CODE>` — the deep link of an invitation — opens the table
-directly. The same parameter is used by the Mini App: `?startapp=join_CODE`
-joins a table, `?startapp=g_ID` opens a game.
-
-## The database
-
-| table          | what it holds                                            |
-|----------------|----------------------------------------------------------|
-| `hokm_users`   | the Telegram users and their chat ids                    |
-| `hokm_games`   | the games — the whole position in JSON columns            |
-| `hokm_moves`   | every card that was played                                |
-| `hokm_meta`    | small cache (the bot info)                                |
-
-The tables are created with `npx tgcloud migrate`.
-
-## Tests
+در ترمینال (لینوکس / مک / ویندوز با Python):
 
 ```bash
-node scripts/simulate.mjs 3000     # 3000 complete bot games, every rule checked
-npx esbuild scripts/check-mirror.ts --bundle --platform=node --format=esm --outfile=/tmp/m.mjs && node /tmp/m.mjs
+# رفتن به پوشه پروژه
+cd مسیر/به/پوشه/Hokm
+
+# (پیشنهادی) ساخت محیط مجازی
+python3 -m venv venv
+
+# فعال‌سازی محیط مجازی
+# لینوکس/مک:
+source venv/bin/activate
+# ویندوز:
+# venv\Scripts\activate
+
+# نصب کتابخانه
+pip install -r requirements.txt
 ```
 
-The first script plays thousands of games and proves that the rules hold; the
-second proves that the Mini App and the bot always agree about which cards
-may be played.
+اگر `python-telegram-bot` نسخه بالاتر می‌خواهید (مثلاً ۲۱.x) هم معمولاً کار می‌کند، اما نسخه ۲۰.۷ تست‌شده است.
 
-## The rules
+### ۵. تنظیم فایل `config.py`
 
-See [docs/hokm-rules.md](docs/hokm-rules.md) — in short:
+فایل `config.py` را با یک ویرایشگر متن باز کنید و این مقادیر را تغییر دهید:
 
-* the first ace selects the حاکم, who chooses trump from the first five cards
-* follow the led suit when possible; otherwise any card is allowed
-* the winner of a trick leads the next one, counterclockwise
-* stop as soon as one team wins seven tricks
-* ordinary wins score one; a 7–0 کت scores two, or three against the حاکم
-* full matches to seven points, optional بام and redeal requests are not yet supported
+```python
+# توکن ربات از BotFather
+BOT_TOKEN = "123456:ABC-DEF-YOUR-REAL-TOKEN"
+
+# لیست آیدی عددی ادمین‌ها
+ADMINS = [
+    123456789,   # آیدی خودت
+    # 987654321, # ادمین‌های دیگر
+]
+
+# بقیه تنظیمات اختیاری هستند:
+MAX_TABLES = 50
+STATE_FILE = "hokm_state.pkl"
+MSG_CHUNK = 3500
+SETS_TO_WIN = 7          # تعداد ست برای بردن بازی
+INACTIVE_TABLE_TIMEOUT = 3600  # ثانیه (۱ ساعت)
+ENABLE_DM_HANDS = True   # ارسال دست در پیام خصوصی
+```
+
+**مهم:** بدون قرار دادن توکن واقعی و حداقل یک آیدی ادمین، ربات درست کار نمی‌کند.
+
+### ۶. اجرای ربات
+
+```bash
+python hokm.py
+```
+
+اگر همه چیز درست باشد، در خروجی چیزی شبیه این می‌بینید:
+
+```
+... | INFO | hokm-bot | Bot is up. Ready.
+... | INFO | hokm-bot | Hokm bot (improved) is running…
+```
+
+ربات آماده است.
+
+### ۷. تست سریع
+
+1. در تلگرام ربات را پیدا کنید و `/start` بزنید.
+2. `/id` را بزنید و مطمئن شوید آیدی‌تان در `ADMINS` است.
+3. یک گروه بسازید، ربات را به گروه اضافه کنید و ادمین کنید (اختیاری ولی توصیه‌شده).
+4. در گروه دستور زیر را بزنید:
+   ```
+   /table تست حکم
+   ```
+5. چهار نفر روی صندلی‌ها بنشینند و «شروع بازی» را بزنند.
+6. حاکم حکم را انتخاب می‌کند و بازی از طریق پیام‌های خصوصی ادامه پیدا می‌کند.
+
+---
+
+## 🎮 نحوه بازی
+
+1. **ساخت میز:** در گروه `/table عنوان` یا از اینلاین `@BotName عنوان میز`.
+2. **نشستن:** هر نفر روی یک صندلی (۱ تا ۴) کلیک می‌کند. صندلی‌های روبرو هم‌تیمی هستند (۱ با ۳، ۲ با ۴).
+3. **شروع:** وقتی ۴ نفر کامل شد، یکی دکمه «شروع بازی» را می‌زند.
+4. **انتخاب حکم:** حاکم ۵ کارت اولیه را در پیام خصوصی می‌بیند و از دکمه‌های ♠ ♥ ♦ ♣ یکی را به عنوان حکم انتخاب می‌کند.
+5. **بازی کارت:** نوبت هر بازیکن که برسد، در پیام خصوصی دکمه‌های کارت‌های قانونی را می‌بیند و یکی را می‌زند.
+6. **امتیاز:** تریک‌ها شمرده می‌شوند. تیمی که تریک بیشتری ببرد، ست را می‌برد. اولین تیم به ۷ ست برنده کل بازی است.
+7. **خروج / لغو:** قبل از شروع می‌توانید از صندلی خارج شوید یا سازنده میز را لغو کند. در حین بازی خروج باعث توقف میز می‌شود.
+
+---
+
+## 🛠 دستورات ربات
+
+| دستور | توضیح | دسترسی |
+|--------|--------|---------|
+| `/start` | خوش‌آمدگویی و راهنمای کوتاه | همه |
+| `/help` | راهنمای کامل | همه |
+| `/rules` | قوانین مختصر حکم | همه |
+| `/id` | نمایش آیدی عددی شما | همه |
+| `/table [عنوان]` | ساخت میز جدید | همه |
+| `/admin` | پنل ادمین + لیست میزها + آمار | ادمین |
+| `/close TABLE_ID` | بستن یک میز | ادمین |
+| `/broadcast متن` | ارسال پیام به همه چت‌های میزهای فعال | ادمین |
+| `/cleanup` | پاک‌سازی فوری میزهای قدیمی | ادمین |
+
+---
+
+## 📁 ساختار فایل‌ها
+
+```
+Hokm/
+├── config.py          # تنظیمات (توکن، ادمین‌ها، محدودیت‌ها)
+├── hokm.py            # کد اصلی ربات
+├── requirements.txt   # وابستگی‌ها
+├── README.md          # همین فایل
+└── hokm_state.pkl     # فایل وضعیت (بعد از اولین اجرا ساخته می‌شود)
+```
+
+---
+
+## ⚙️ اجرا به صورت دائمی (Production)
+
+### با screen (ساده)
+
+```bash
+screen -S hokm
+python hokm.py
+# Ctrl+A سپس D برای جدا شدن
+# برگشت: screen -r hokm
+```
+
+### با systemd (لینوکس)
+
+فایل `/etc/systemd/system/hokm-bot.service`:
+
+```ini
+[Unit]
+Description=Hokm Telegram Bot
+After=network.target
+
+[Service]
+Type=simple
+User=YOUR_USER
+WorkingDirectory=/path/to/Hokm
+ExecStart=/path/to/Hokm/venv/bin/python hokm.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+سپس:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable hokm-bot
+sudo systemctl start hokm-bot
+sudo systemctl status hokm-bot
+```
+
+### با Docker (اختیاری)
+
+```dockerfile
+FROM python:3.11-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+CMD ["python", "hokm.py"]
+```
+
+---
+
+## 🔧 عیب‌یابی رایج
+
+| مشکل | راه‌حل |
+|------|--------|
+| ربات جواب نمی‌دهد | توکن را در `config.py` چک کنید. ربات را با `/start` استارت کرده باشید. |
+| پیام خصوصی دست نمی‌آید | کاربر باید حداقل یک بار ربات را `/start` کرده باشد. اگر بلاک کرده باشد، DM کار نمی‌کند. |
+| «سقف میزها پر است» | با `/admin` میزهای قدیمی را ببینید و با `/close` یا `/cleanup` پاک کنید. |
+| خطای Persistence | مطمئن شوید پوشه قابل نوشتن است و `hokm_state.pkl` قفل نیست. |
+| دکمه‌ها کار نمی‌کنند | ربات را در گروه ادمین کنید یا حداقل اجازه ارسال پیام داشته باشد. |
+| نسخه کتابخانه | `pip install python-telegram-bot==20.7` را دقیق اجرا کنید. |
+
+---
+
+## 📌 نکات مهم امنیتی
+
+- **هرگز** توکن ربات را در گیت‌هاب یا جای عمومی قرار ندهید.
+- فایل `config.py` را در `.gitignore` بگذارید اگر پروژه را آپلود می‌کنید.
+- فقط آیدی‌های مورد اعتماد را در `ADMINS` قرار دهید.
+- فایل `hokm_state.pkl` شامل وضعیت بازی‌هاست؛ از آن بکاپ بگیرید اگر لازم است.
+
+---
+
+## 🆚 تغییرات نسبت به سورس اصلی
+
+- رفع باگ: دستور `/broadcast` حالا فقط برای ادمین است.
+- اضافه شدن خروج از صندلی و لغو میز.
+- نمایش کارت‌های بازی‌شده در تریک.
+- ویرایش پیام‌های DM به جای ارسال مکرر (کاهش اسپم).
+- پایان بازی در رسیدن به تعداد مشخص ست.
+- پاک‌سازی خودکار میزهای غیرفعال.
+- آمار در پنل ادمین.
+- دستور `/rules`.
+- بهبود منطق برنده تریک و پیام‌های وضعیت.
+- کد تمیزتر و مستندتر.
+
+---
+
+## 📞 پشتیبانی و توسعه
+
+توسعه‌دهنده: [@NamePlusUser](https://t.me/NamePlusUser)  
+کانال سورس‌ها: [@BotSorce](https://t.me/BotSorce)
+
+این نسخه برای استفاده شخصی و گروهی آماده است. می‌توانید قابلیت‌های بیشتری مثل:
+
+- مینی‌اپ تلگرام (WebApp) برای رابط گرافیکی کارت‌ها
+- رتبه‌بندی بازیکنان
+- حالت تورنمنت
+- پشتیبانی از چند زبان
+
+را اضافه کنید.
+
+موفق باشید و بازی خوبی داشته باشید! 🎴  
+— @NamePlusUser | @BotSorce
